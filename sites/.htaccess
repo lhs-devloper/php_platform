@@ -1,0 +1,4 @@
+# .env 파일 외부 접근 차단
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>

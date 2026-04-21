@@ -1,0 +1,18 @@
+*.sql
+*.conf
+*.zip
+
+# 환경설정 (비밀정보 포함)
+.env
+admin/.env
+admin/.env.example
+sites/.env
+sites/.env.example
+
+ai_plan.md
+ai_work.md
+AIoT족부분석.md
+AI자세분석.md
+flow_claude_api.md
+setup-guide.md
+work.md
