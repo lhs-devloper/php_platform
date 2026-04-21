@@ -1,10 +1,34 @@
 <?php
+
 /**
  * CentralAdmin - 설정 파일
  * .env 파일에서 환경변수를 로드하여 상수로 정의
  */
 
 // .env 로더
+// PHP 8.0 미만 버전을 위한 str_starts_with 함수 정의
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needle)
+    {
+        return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
+    }
+}
+
+// (참고) 아마 str_ends_with나 str_contains도 에러가 날 확률이 높으니 같이 넣어두는 게 좋습니다.
+if (!function_exists('str_ends_with')) {
+    function str_ends_with($haystack, $needle)
+    {
+        return $needle !== '' && substr($haystack, -strlen($needle)) === (string)$needle;
+    }
+}
+
+if (!function_exists('str_contains')) {
+    function str_contains($haystack, $needle)
+    {
+        return $needle !== '' && mb_strpos($haystack, $needle) !== false;
+    }
+}
+
 require_once __DIR__ . '/core/Env.php';
 Env::load(__DIR__ . '/.env');
 

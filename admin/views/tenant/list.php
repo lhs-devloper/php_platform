@@ -34,7 +34,7 @@
                 검색
             </button>
             <a href="index.php?route=tenant/list" class="btn btn-sm btn-outline-secondary px-3">초기화</a>
-            <?php if (Auth::hasRole(['SUPER_ADMIN','ADMIN','OPERATOR'])): ?>
+            <?php if (Auth::hasRole(['SUPER_ADMIN','ADMIN','OPERATOR']) || Auth::isPartner()): ?>
             <a href="index.php?route=tenant/create" class="btn btn-sm btn-success px-3 ms-2">
                 <i class="bi bi-plus-lg"></i> 가맹점 등록
             </a>

@@ -12,10 +12,10 @@ class SystemConfigModel extends Model
      */
     public function get(string $key, string $default = ''): string
     {
-        $stmt = $this->db->prepare("SELECT config_value FROM `{$this->table}` WHERE config_key = ? LIMIT 1");
-        $stmt->execute([$key]);
-        $row = $stmt->fetch();
-        return $row ? $row['config_value'] : $default;
+        $val = $this->query()
+            ->where('config_key', $key)
+            ->value('config_value');
+        return $val !== null ? $val : $default;
     }
 
     /**
@@ -23,18 +23,21 @@ class SystemConfigModel extends Model
      */
     public function set(string $key, string $value, string $group = 'general', string $label = ''): void
     {
-        $stmt = $this->db->prepare("SELECT id FROM `{$this->table}` WHERE config_key = ? LIMIT 1");
-        $stmt->execute([$key]);
-        $row = $stmt->fetch();
+        $exists = $this->firstWhere('config_key', $key);
 
-        if ($row) {
-            $this->db->prepare(
-                "UPDATE `{$this->table}` SET config_value = ?, updated_at = NOW() WHERE config_key = ?"
-            )->execute([$value, $key]);
+        if ($exists) {
+            $this->query()
+                ->where('config_key', $key)
+                ->updateRaw('config_value = ?, updated_at = NOW()', [$value]);
         } else {
-            $this->db->prepare(
-                "INSERT INTO `{$this->table}` (config_key, config_value, config_group, label, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())"
-            )->execute([$key, $value, $group, $label]);
+            $this->query()->insert([
+                'config_key'   => $key,
+                'config_value' => $value,
+                'config_group' => $group,
+                'label'        => $label,
+                'created_at'   => date('Y-m-d H:i:s'),
+                'updated_at'   => date('Y-m-d H:i:s'),
+            ]);
         }
     }
 
@@ -43,9 +46,11 @@ class SystemConfigModel extends Model
      */
     public function getGroup(string $group): array
     {
-        $stmt = $this->db->prepare("SELECT config_key, config_value, label FROM `{$this->table}` WHERE config_group = ? ORDER BY id ASC");
-        $stmt->execute([$group]);
-        $rows = $stmt->fetchAll();
+        $rows = $this->query()
+            ->select('config_key, config_value, label')
+            ->where('config_group', $group)
+            ->orderBy('id ASC')
+            ->get();
 
         $result = [];
         foreach ($rows as $row) {
@@ -66,7 +71,7 @@ class SystemConfigModel extends Model
     }
 
     /**
-     * SMTP 설정 조회 (편의 메서드)
+     * SMTP 설정 조회
      */
     public function getSmtpConfig(): array
     {

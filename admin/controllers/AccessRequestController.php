@@ -102,9 +102,8 @@ class AccessRequestController extends Controller
         }
 
         // 요청 가능한 가맹점 목록 (전체 가맹점 중 TERMINATED 제외)
-        $db = Database::getInstance();
-        $stmt = $db->query("SELECT id, company_name, status FROM tenant WHERE status != 'TERMINATED' ORDER BY company_name ASC");
-        $tenants = $stmt->fetchAll();
+        $tenantModel = new TenantModel();
+        $tenants = $tenantModel->getActiveList();
 
         $this->view('access_request/create', [
             'pageTitle' => '열람 요청',

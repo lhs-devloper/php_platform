@@ -23,7 +23,14 @@ class Controller
         if ($override) {
             try {
                 $contentView = null;
-                $contentHtml = ThemeManager::renderTemplate($override['html_content'], $__data);
+                // 중첩 배열(member, tenant 등)을 플랫 전개하여 {{key}} 접근 가능하게
+                $__flatData = $__data;
+                foreach ($__data as $k => $v) {
+                    if (is_array($v) && !isset($v[0])) {
+                        $__flatData = array_merge($__flatData, $v);
+                    }
+                }
+                $contentHtml = ThemeManager::renderTemplate($override['html_content'], $__flatData);
                 $contentCss  = $override['css_content'] ?? '';
             } catch (Exception $e) {
                 // 렌더링 실패 시 기본 뷰로 폴백

@@ -21,8 +21,13 @@
         <?php if (!empty($database) && $database['domain']): ?>
         <a href="index.php?route=tenant/access_site&id=<?= $tenant['id'] ?>" target="_blank"
            class="btn btn-sm btn-primary shadow-sm px-3">
-            <i class="bi bi-box-arrow-up-right me-1"></i> 서비스 사이트 접속
+            <i class="bi bi-box-arrow-up-right me-1"></i> 사이트 바로접속
         </a>
+        <?php else: ?>
+        <button type="button" class="btn btn-sm btn-outline-secondary px-3" disabled
+                title="DB 프로비저닝 후 이용 가능합니다">
+            <i class="bi bi-box-arrow-up-right me-1"></i> 사이트 바로접속
+        </button>
         <?php endif; ?>
         
         <div class="dropdown">

@@ -98,8 +98,9 @@ class Auth
     }
 
     /**
-     * 협력업체의 열람 승인된 가맹점 ID 목록 반환
-     * partner_access_request 에서 APPROVED + 현재 시각이 허용 기간 내인 것만
+     * 협력업체가 접근 가능한 가맹점 ID 목록 반환
+     * 1) partner_tenant 직접 연결 (협력업체가 등록한 가맹점 포함)
+     * 2) partner_access_request 열람 승인 (기간 내)
      */
     public static function getPartnerTenantIds(): array
     {
@@ -116,15 +117,16 @@ class Auth
 
         $db = Database::getInstance();
         $stmt = $db->prepare(
-            "SELECT DISTINCT requested_tenant_id
-             FROM partner_access_request
-             WHERE partner_id = ?
-               AND status = 'APPROVED'
-               AND access_start <= NOW()
-               AND access_end >= NOW()"
+            "SELECT DISTINCT tenant_id FROM (
+                SELECT tenant_id FROM partner_tenant WHERE partner_id = ?
+                UNION
+                SELECT requested_tenant_id FROM partner_access_request
+                WHERE partner_id = ? AND status = 'APPROVED'
+                  AND access_start <= NOW() AND access_end >= NOW()
+            ) AS combined"
         );
-        $stmt->execute([$user['partner_id']]);
-        $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $stmt->execute([$user['partner_id'], $user['partner_id']]);
+        $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
         $_SESSION['partner_tenant_ids'] = $ids;
         $_SESSION['partner_tenant_ids_ts'] = time();
         return $ids;

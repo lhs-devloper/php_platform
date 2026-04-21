@@ -5,9 +5,6 @@ class TenantDatabaseModel extends Model
 
     public function findByTenantId($tenantId)
     {
-        $stmt = $this->db->prepare('SELECT * FROM tenant_database WHERE tenant_id = ? LIMIT 1');
-        $stmt->execute([$tenantId]);
-        $row = $stmt->fetch();
-        return $row !== false ? $row : null;
+        return $this->firstWhere('tenant_id', $tenantId);
     }
 }

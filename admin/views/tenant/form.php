@@ -1,4 +1,9 @@
-<?php $t = $tenant; ?>
+<?php
+$t = $tenant;
+$partner = $isPartner ?? false;
+$allowed = $allowedServiceTypes ?? ['POSTURE', 'FOOT', 'BOTH'];
+$serviceLabels = ['POSTURE' => 'AI자세분석', 'FOOT' => 'AIoT족부분석', 'BOTH' => '통합'];
+?>
 <div class="card border-0 shadow-sm">
     <div class="card-body">
         <form method="POST" action="index.php?route=<?= $isEdit ? 'tenant/edit&id=' . $t['id'] : 'tenant/create' ?>">
@@ -49,6 +54,14 @@
                            value="<?= htmlspecialchars($t['address_detail'] ?? '') ?>">
                 </div>
 
+                <?php if ($partner && !$isEdit): ?>
+                <!-- 협력업체: 상태 ACTIVE 고정 -->
+                <input type="hidden" name="status" value="ACTIVE">
+                <div class="col-md-3">
+                    <label class="form-label">상태</label>
+                    <input type="text" class="form-control bg-light text-success fw-semibold" value="즉시 활성화" disabled>
+                </div>
+                <?php else: ?>
                 <div class="col-md-3">
                     <label class="form-label">상태 <span class="text-danger">*</span></label>
                     <select name="status" class="form-select" required>
@@ -57,13 +70,27 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php endif; ?>
+
                 <div class="col-md-3">
                     <label class="form-label">서비스 유형 <span class="text-danger">*</span></label>
+                    <?php if ($partner && !$isEdit && count($allowed) === 1): ?>
+                    <!-- 협력업체 서비스 유형이 단일인 경우 고정 -->
+                    <input type="hidden" name="service_type" value="<?= $allowed[0] ?>">
+                    <input type="text" class="form-control bg-light" value="<?= $serviceLabels[$allowed[0]] ?>" disabled>
+                    <?php else: ?>
                     <select name="service_type" class="form-select" required>
+                        <?php if (!$partner || $isEdit): ?>
                         <option value="BOTH" <?= ($t['service_type'] ?? 'BOTH') === 'BOTH' ? 'selected' : '' ?>>통합</option>
                         <option value="POSTURE" <?= ($t['service_type'] ?? '') === 'POSTURE' ? 'selected' : '' ?>>AI자세분석</option>
                         <option value="FOOT" <?= ($t['service_type'] ?? '') === 'FOOT' ? 'selected' : '' ?>>AIoT족부분석</option>
+                        <?php else: ?>
+                        <?php foreach ($allowed as $type): ?>
+                        <option value="<?= $type ?>" <?= ($t['service_type'] ?? $allowed[0]) === $type ? 'selected' : '' ?>><?= $serviceLabels[$type] ?></option>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </select>
+                    <?php endif; ?>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">계약 시작일</label>
@@ -81,8 +108,44 @@
                     <textarea name="memo" class="form-control" rows="3"><?= htmlspecialchars($t['memo'] ?? '') ?></textarea>
                 </div>
 
-                <?php if (!$isEdit): ?>
-                <!-- DB 자동 프로비저닝 옵션 (등록 시에만) -->
+                <?php if (!$isEdit && $partner): ?>
+                <!-- 협력업체: 슬러그 입력 (자동 프로비저닝 필수) -->
+                <div class="col-12">
+                    <div class="card bg-light border">
+                        <div class="card-body py-3">
+                            <label class="form-label fw-semibold mb-2">
+                                <i class="bi bi-globe"></i> 사이트 주소 설정 <span class="text-danger">*</span>
+                            </label>
+                            <div class="row align-items-end g-2">
+                                <div class="col-md-4">
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" name="slug" class="form-control" required
+                                               placeholder="myshop" pattern="[a-z0-9\-]+"
+                                               value="<?= htmlspecialchars($t['slug'] ?? '') ?>">
+                                        <span class="input-group-text"><?= PROVISION_DOMAIN_SUFFIX ?></span>
+                                    </div>
+                                    <small class="text-muted">영문 소문자, 숫자, 하이픈만 가능 (3~50자)</small>
+                                </div>
+                                <div class="col-md-8">
+                                    <small class="text-muted">
+                                        입력한 주소로 사이트가 자동 생성됩니다.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        등록 즉시 <strong>활성화</strong>되며, DB와 사이트가 자동 생성되어 바로 이용 가능합니다.
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!$isEdit && !$partner): ?>
+                <!-- DB 자동 프로비저닝 옵션 (중앙관리자 등록 시에만) -->
                 <div class="col-12">
                     <div class="card bg-light border">
                         <div class="card-body py-3">

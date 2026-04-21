@@ -5,8 +5,9 @@ class TenantContactModel extends Model
 
     public function findByTenantId($tenantId)
     {
-        $stmt = $this->db->prepare('SELECT * FROM tenant_contact WHERE tenant_id = ? ORDER BY is_primary DESC, id ASC');
-        $stmt->execute([$tenantId]);
-        return $stmt->fetchAll();
+        return $this->query()
+            ->where('tenant_id', $tenantId)
+            ->orderBy('is_primary DESC, id ASC')
+            ->get();
     }
 }

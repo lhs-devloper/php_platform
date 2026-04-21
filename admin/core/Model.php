@@ -1,6 +1,7 @@
 <?php
 /**
- * 베이스 모델 - CRUD 헬퍼
+ * 베이스 모델 - ORM 스타일 CRUD
+ * QueryBuilder를 통한 Fluent API 제공
  */
 class Model
 {
@@ -14,15 +15,32 @@ class Model
     }
 
     /**
+     * QueryBuilder 인스턴스 생성
+     * @param string $alias 테이블 별칭 (예: 't')
+     */
+    public function query(string $alias = ''): QueryBuilder
+    {
+        return new QueryBuilder($this->table, $alias, $this->db);
+    }
+
+    /**
      * PK로 단건 조회
      */
     public function findById($id)
     {
-        $sql = "SELECT * FROM `{$this->table}` WHERE `{$this->primaryKey}` = ? LIMIT 1";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$id]);
-        $row = $stmt->fetch();
-        return $row !== false ? $row : null;
+        return $this->query()
+            ->where($this->primaryKey, $id)
+            ->first();
+    }
+
+    /**
+     * 단일 컬럼 조건으로 단건 조회
+     */
+    public function firstWhere(string $col, $value)
+    {
+        return $this->query()
+            ->where($col, $value)
+            ->first();
     }
 
     /**
@@ -30,13 +48,24 @@ class Model
      */
     public function findAll(array $conditions = [], $orderBy = 'id DESC', $limit = 20, $offset = 0)
     {
-        list($where, $params) = $this->buildWhere($conditions);
-        $sql = "SELECT * FROM `{$this->table}` {$where} ORDER BY {$orderBy} LIMIT ? OFFSET ?";
-        $params[] = (int)$limit;
-        $params[] = (int)$offset;
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        $qb = $this->query();
+
+        foreach ($conditions as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+            if (substr($key, 0, 1) === '%' && substr($key, -1) === '%') {
+                $col = trim($key, '%');
+                $qb->whereLike($col, $value);
+            } else {
+                $qb->where($key, $value);
+            }
+        }
+
+        return $qb->orderBy($orderBy)
+            ->limit((int)$limit)
+            ->offset((int)$offset)
+            ->get();
     }
 
     /**
@@ -44,11 +73,21 @@ class Model
      */
     public function count(array $conditions = [])
     {
-        list($where, $params) = $this->buildWhere($conditions);
-        $sql = "SELECT COUNT(*) FROM `{$this->table}` {$where}";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return (int)$stmt->fetchColumn();
+        $qb = $this->query();
+
+        foreach ($conditions as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+            if (substr($key, 0, 1) === '%' && substr($key, -1) === '%') {
+                $col = trim($key, '%');
+                $qb->whereLike($col, $value);
+            } else {
+                $qb->where($key, $value);
+            }
+        }
+
+        return $qb->count();
     }
 
     /**
@@ -56,17 +95,7 @@ class Model
      */
     public function insert(array $data)
     {
-        $columns = array_keys($data);
-        $placeholders = array_fill(0, count($columns), '?');
-        $sql = sprintf(
-            'INSERT INTO `%s` (`%s`) VALUES (%s)',
-            $this->table,
-            implode('`, `', $columns),
-            implode(', ', $placeholders)
-        );
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(array_values($data));
-        return (int)$this->db->lastInsertId();
+        return $this->query()->insert($data);
     }
 
     /**
@@ -74,21 +103,9 @@ class Model
      */
     public function update($id, array $data)
     {
-        $sets = [];
-        $params = [];
-        foreach ($data as $col => $val) {
-            $sets[] = "`{$col}` = ?";
-            $params[] = $val;
-        }
-        $params[] = $id;
-        $sql = sprintf(
-            'UPDATE `%s` SET %s WHERE `%s` = ?',
-            $this->table,
-            implode(', ', $sets),
-            $this->primaryKey
-        );
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+        return $this->query()
+            ->where($this->primaryKey, $id)
+            ->update($data);
     }
 
     /**
@@ -96,42 +113,8 @@ class Model
      */
     public function delete($id)
     {
-        $sql = "DELETE FROM `{$this->table}` WHERE `{$this->primaryKey}` = ?";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$id]);
-    }
-
-    /**
-     * WHERE 절 빌드
-     * 키가 %로 감싸져 있으면 LIKE, 아니면 = 비교
-     */
-    protected function buildWhere(array $conditions)
-    {
-        if (empty($conditions)) {
-            return ['', []];
-        }
-
-        $clauses = [];
-        $params = [];
-        foreach ($conditions as $key => $value) {
-            if ($value === null || $value === '') {
-                continue;
-            }
-            // LIKE 검색: '%column%' => value
-            if (substr($key, 0, 1) === '%' && substr($key, -1) === '%') {
-                $col = trim($key, '%');
-                $clauses[] = "`{$col}` LIKE ?";
-                $params[] = '%' . $value . '%';
-            } else {
-                $clauses[] = "`{$key}` = ?";
-                $params[] = $value;
-            }
-        }
-
-        if (empty($clauses)) {
-            return ['', []];
-        }
-
-        return ['WHERE ' . implode(' AND ', $clauses), $params];
+        return $this->query()
+            ->where($this->primaryKey, $id)
+            ->delete();
     }
 }

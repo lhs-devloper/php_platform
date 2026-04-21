@@ -70,7 +70,8 @@
       "Bash(C:/xampp/php/php:*)",
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root -p1234 --default-character-set=utf8mb4 -e \"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='smartideaaisw' AND \\(TABLE_NAME LIKE '%posture%' OR TABLE_NAME LIKE '%foot%' OR TABLE_NAME LIKE '%session%' OR TABLE_NAME LIKE '%report%' OR TABLE_NAME LIKE '%member%'\\);\" 2>&1)",
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root -p1234 --default-character-set=utf8mb4 central_admin -e \"SELECT td.tenant_id, t.company_name, td.db_name, td.db_host, td.db_user, td.status FROM tenant_database td JOIN tenant t ON t.id = td.tenant_id WHERE td.status = 'ACTIVE';\" 2>&1)",
-      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -p1234 --default-character-set=utf8mb4 central_admin -e \"DESCRIBE notice;\" 2>&1)"
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -p1234 --default-character-set=utf8mb4 central_admin -e \"DESCRIBE notice;\" 2>&1)",
+      "Bash(D:/xampp/mysql/bin/mysql.exe *)"
     ]
   }
 }

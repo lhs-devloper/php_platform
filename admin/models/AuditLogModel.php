@@ -5,14 +5,11 @@ class AuditLogModel extends Model
 
     public function findRecent($limit = 10)
     {
-        $stmt = $this->db->prepare(
-            'SELECT al.*, ca.name AS admin_name
-             FROM audit_log al
-             LEFT JOIN central_admin ca ON ca.id = al.admin_id
-             ORDER BY al.created_at DESC
-             LIMIT ?'
-        );
-        $stmt->execute([(int)$limit]);
-        return $stmt->fetchAll();
+        return $this->query('al')
+            ->select('al.*, ca.name AS admin_name')
+            ->leftJoin('central_admin ca', 'ca.id = al.admin_id')
+            ->orderBy('al.created_at DESC')
+            ->limit((int)$limit)
+            ->get();
     }
 }

@@ -5,7 +5,7 @@
 
 require_once __DIR__ . '/config.php';
 
-// Core
+// 코어 클래스 로드
 require_once BASE_PATH . '/core/Database.php';
 require_once BASE_PATH . '/core/Auth.php';
 require_once BASE_PATH . '/core/Router.php';
@@ -14,10 +14,10 @@ require_once BASE_PATH . '/core/Model.php';
 require_once BASE_PATH . '/core/Validator.php';
 require_once BASE_PATH . '/core/Pagination.php';
 
-// Components
+// 뷰 컴포넌트 함수 로드
 require_once BASE_PATH . '/views/components/status_badge.php';
 
-// Models
+// 모델 로드
 require_once BASE_PATH . '/models/AdminModel.php';
 require_once BASE_PATH . '/models/DashboardModel.php';
 require_once BASE_PATH . '/models/MemberModel.php';
@@ -32,18 +32,18 @@ require_once BASE_PATH . '/models/AiConfigModel.php';
 require_once BASE_PATH . '/models/AiUsageLogModel.php';
 require_once BASE_PATH . '/models/NoticeModel.php';
 
-// Theme
+// 테마
 require_once BASE_PATH . '/core/ThemeManager.php';
 require_once BASE_PATH . '/models/ThemeSettingsModel.php';
 require_once BASE_PATH . '/models/ThemeViewOverrideModel.php';
 
-// AI
+// AI 클라이언트
 require_once BASE_PATH . '/core/AiClient.php';
 
-// Theme 초기화 (라우팅 전)
+// 테마 초기화 (라우팅 전)
 ThemeManager::init();
 
-// Router
+// 라우터 설정
 $router = new Router();
 
 $router->add('auth/login', 'AuthController', 'login');
@@ -79,7 +79,7 @@ $router->add('notice/detail', 'NoticeController', 'detail');
 
 $router->add('lab', 'LabController', 'index');
 
-// Theme
+// 테마
 $router->add('theme/settings', 'ThemeController', 'settings');
 $router->add('theme/save_branding', 'ThemeController', 'saveBranding');
 $router->add('theme/save_colors', 'ThemeController', 'saveColors');
@@ -95,7 +95,7 @@ $router->add('theme/preview', 'ThemeController', 'preview');
 $router->add('theme/upload_logo', 'ThemeController', 'uploadLogo');
 $router->add('theme/reset', 'ThemeController', 'reset');
 
-// Dispatch
+// 라우트 결정
 $route = isset($_GET['route']) ? $_GET['route'] : 'dashboard';
 
 if ($route !== 'auth/login' && $route !== 'auth/admin_access' && !Auth::check()) {
@@ -103,4 +103,5 @@ if ($route !== 'auth/login' && $route !== 'auth/admin_access' && !Auth::check())
     exit;
 }
 
+// 디스패치
 $router->dispatch($route);

@@ -42,16 +42,49 @@ class TenantController extends Controller
     }
 
     /**
-     * 가맹점 등록/수정 폼 + 처리
+     * 가맹점 등록 폼 + 처리
+     * 중앙관리자: 전체 기능
+     * 협력업체: ACTIVE 즉시 생성 + 자동 프로비저닝 + 서비스 유형 제한 + partner_tenant 자동 연결
      */
     public function create()
     {
         $this->requireAuth();
-        $this->requireRole(['SUPER_ADMIN', 'ADMIN', 'OPERATOR']);
+        $isPartner = Auth::isPartner();
+
+        // 중앙관리자 역할 체크 (협력업체는 역할 무관하게 허용)
+        if (!$isPartner) {
+            $this->requireRole(['SUPER_ADMIN', 'ADMIN', 'OPERATOR']);
+        }
+
+        // 협력업체 정보 조회 (서비스 유형 제한용)
+        $partnerInfo = null;
+        $allowedServiceTypes = ['POSTURE', 'FOOT', 'BOTH'];
+        if ($isPartner) {
+            $partnerModel = new PartnerModel();
+            $partnerInfo = $partnerModel->findById(Auth::user()['partner_id']);
+            if ($partnerInfo) {
+                // 협력업체 service_type에 따른 허용 유형
+                if ($partnerInfo['service_type'] === 'POSTURE') {
+                    $allowedServiceTypes = ['POSTURE'];
+                } elseif ($partnerInfo['service_type'] === 'FOOT') {
+                    $allowedServiceTypes = ['FOOT'];
+                } else {
+                    $allowedServiceTypes = ['POSTURE', 'FOOT', 'BOTH'];
+                }
+            }
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             $data = $this->getTenantData();
+
+            if ($isPartner) {
+                // 협력업체: ACTIVE 즉시 생성, 서비스 유형 강제
+                $data['status'] = 'ACTIVE';
+                if (!in_array($data['service_type'], $allowedServiceTypes)) {
+                    $data['service_type'] = $allowedServiceTypes[0];
+                }
+            }
 
             $v = new Validator($data);
             $v->required('company_name', '업체명')
@@ -69,12 +102,48 @@ class TenantController extends Controller
             $id = $this->tenantModel->insert($data);
             $this->auditLog('CREATE', 'tenant', $id, "가맹점 등록: {$data['company_name']}");
 
-            // 자동 DB 프로비저닝 (auto_provision 체크 시)
+            // 협력업체가 등록한 경우
+            if ($isPartner) {
+                // partner_tenant 관계 자동 생성
+                $partnerTenantModel = new PartnerTenantModel();
+                $partnerTenantModel->add(Auth::user()['partner_id'], $id);
+                $this->auditLog('CREATE', 'partner_tenant', null,
+                    "협력업체 가맹점 자동 연결: partner={$_SESSION['admin']['partner_name']}, tenant={$data['company_name']}",
+                    null, null, $id);
+
+                // 자동 프로비저닝 (슬러그 필수, admin_id는 null — FK가 central_admin이므로)
+                $slug = strtolower(trim($this->input('slug', '')));
+                $slugError = ProvisionService::validateSlug($slug);
+                if ($slugError) {
+                    $this->flash('warning', "가맹점은 등록되었으나 프로비저닝 실패: {$slugError}");
+                    unset($_SESSION['partner_tenant_ids'], $_SESSION['partner_tenant_ids_ts']);
+                    $this->redirect('tenant/list');
+                    return;
+                }
+
+                $tenant = $this->tenantModel->findById($id);
+                $provision = new ProvisionService();
+                $result = $provision->provision($id, $tenant, $slug, null);
+
+                // 세션 캐시 무효화
+                unset($_SESSION['partner_tenant_ids'], $_SESSION['partner_tenant_ids_ts']);
+
+                if ($result['success']) {
+                    $this->auditLog('PROVISION', 'tenant_database', $id,
+                        "협력업체 자동 프로비저닝 완료: {$result['db_name']} → {$result['domain']}", null, null, $id);
+                    $this->flash('success', "가맹점이 등록되었습니다. {$result['domain']} 으로 바로 이용 가능합니다.");
+                } else {
+                    $this->flash('warning', "가맹점은 등록되었으나 DB 생성에 실패했습니다: {$result['message']}");
+                }
+                $this->redirect('tenant/list');
+                return;
+            }
+
+            // 중앙관리자: 자동 DB 프로비저닝 (auto_provision 체크 시)
             $autoProvision = $this->input('auto_provision');
             if ($autoProvision) {
                 $slug = strtolower(trim($this->input('slug', '')));
 
-                // 슬러그 유효성 검증
                 $slugError = ProvisionService::validateSlug($slug);
                 if ($slugError) {
                     $this->flash('warning', "가맹점은 등록되었으나 프로비저닝 실패: {$slugError}");
@@ -104,10 +173,12 @@ class TenantController extends Controller
         unset($_SESSION['form_data']);
 
         $this->view('tenant/form', [
-            'pageTitle' => '가맹점 등록',
-            'tenant'    => $formData,
-            'isEdit'    => false,
-            'csrfToken' => Auth::generateCsrfToken(),
+            'pageTitle'           => '가맹점 등록',
+            'tenant'              => $formData,
+            'isEdit'              => false,
+            'isPartner'           => $isPartner,
+            'allowedServiceTypes' => $allowedServiceTypes,
+            'csrfToken'           => Auth::generateCsrfToken(),
         ]);
     }
 
@@ -285,25 +356,7 @@ class TenantController extends Controller
         }
 
         // 2. FK 종속 테이블 데이터 순서대로 삭제
-        $db = Database::getInstance();
-        $dependentTables = [
-            'provision_log',
-            'partner_access_log',
-            'partner_access_request',
-            'partner_tenant',
-            'usage_daily',
-            'payment',
-            'subscription',
-            'inquiry',
-            'notice',
-            'tenant_contact',
-            'tenant_database',
-        ];
-        foreach ($dependentTables as $table) {
-            $col = ($table === 'partner_access_request') ? 'requested_tenant_id' : 'tenant_id';
-            $stmt = $db->prepare("DELETE FROM `{$table}` WHERE `{$col}` = ?");
-            $stmt->execute([$id]);
-        }
+        $this->tenantModel->destroyDependents($id);
 
         // 3. 감사 로그 기록 (tenant 삭제 전에 기록 — tenant_id FK가 audit_log에 없으므로 OK)
         $this->auditLog('DESTROY', 'tenant', $id,
@@ -433,19 +486,21 @@ class TenantController extends Controller
 
     /**
      * 가맹점 사이트 바로 접속 (자동 로그인 토큰 발급)
-     * 협력업체는 사이트 바로접속 불가
+     * 중앙관리자: 전체 가맹점 / 협력업체: 소속 가맹점만
      */
     public function accessSite()
     {
         $this->requireAuth();
 
-        if (Auth::isPartner()) {
-            $this->flash('danger', '협력업체 계정은 사이트 바로접속 권한이 없습니다.');
+        $id = (int)$this->input('id');
+
+        // 협력업체: 소속 가맹점만 접속 가능
+        if (Auth::isPartner() && !Auth::canAccessTenant($id)) {
+            $this->flash('danger', '접근 권한이 없는 가맹점입니다.');
             $this->redirect('tenant/list');
             return;
         }
 
-        $id = (int)$this->input('id');
         $database = $this->dbModel->findByTenantId($id);
 
         if (!$database || !$database['domain']) {

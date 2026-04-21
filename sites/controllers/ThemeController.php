@@ -315,13 +315,8 @@ class ThemeController extends Controller
         $overrideModel = new ThemeViewOverrideModel();
         $existing = $overrideModel->getByViewPath($viewPath);
 
-        // 기본 뷰 소스를 Mustache 변환하여 제공 (PHP 코드 미노출)
-        $defaultSource = '';
-        $defaultViewFile = BASE_PATH . '/views/' . $viewPath . '.php';
-        if (file_exists($defaultViewFile)) {
-            $rawSource = file_get_contents($defaultViewFile);
-            $defaultSource = ThemeManager::convertPhpToMustache($rawSource);
-        }
+        // 기본 Mustache 템플릿 제공 (PHP 코드 미노출)
+        $defaultSource = ThemeManager::getDefaultTemplate($viewPath);
 
         $variables = ThemeManager::getViewVariables($viewPath);
 

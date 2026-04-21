@@ -5,8 +5,9 @@ class PartnerAdminModel extends Model
 
     public function findByPartnerId($partnerId)
     {
-        $stmt = $this->db->prepare('SELECT * FROM partner_admin WHERE partner_id = ? ORDER BY id ASC');
-        $stmt->execute([$partnerId]);
-        return $stmt->fetchAll();
+        return $this->query()
+            ->where('partner_id', $partnerId)
+            ->orderBy('id ASC')
+            ->get();
     }
 }

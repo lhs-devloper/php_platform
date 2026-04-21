@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CentralAdmin - 프론트 컨트롤러
  */
@@ -80,6 +81,7 @@ if (!$checkResult['installed']) {
 
 // 코어 클래스 로드
 require_once BASE_PATH . '/core/Database.php';
+require_once BASE_PATH . '/core/QueryBuilder.php';
 require_once BASE_PATH . '/core/Auth.php';
 require_once BASE_PATH . '/core/Router.php';
 require_once BASE_PATH . '/core/Controller.php';
@@ -189,10 +191,18 @@ if ($route !== 'auth/login' && !Auth::check()) {
 // 협력업체 접근 제한: 허용된 라우트만 접근 가능
 if (Auth::isPartner()) {
     $partnerAllowed = [
-        'dashboard', 'auth/login', 'auth/logout',
-        'tenant/list', 'tenant/detail',
-        'notice/list', 'notice/detail',
-        'access_request/list', 'access_request/create', 'access_request/detail',
+        'dashboard',
+        'auth/login',
+        'auth/logout',
+        'tenant/list',
+        'tenant/create',
+        'tenant/detail',
+        'tenant/access_site',
+        'notice/list',
+        'notice/detail',
+        'access_request/list',
+        'access_request/create',
+        'access_request/detail',
     ];
     if (!in_array($route, $partnerAllowed)) {
         $_SESSION['flash'] = ['type' => 'danger', 'message' => '접근 권한이 없습니다.'];
