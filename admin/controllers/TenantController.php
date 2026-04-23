@@ -77,6 +77,7 @@ class TenantController extends Controller
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             $data = $this->getTenantData();
+            $appPwPlain = trim($this->input('app_pw', ''));
 
             if ($isPartner) {
                 // 협력업체: ACTIVE 즉시 생성, 서비스 유형 강제
@@ -99,6 +100,7 @@ class TenantController extends Controller
                 return;
             }
 
+            $data['app_pw'] = $appPwPlain !== '' ? Crypto::encrypt($appPwPlain) : null;
             $id = $this->tenantModel->insert($data);
             $this->auditLog('CREATE', 'tenant', $id, "가맹점 등록: {$data['company_name']}");
 
@@ -199,6 +201,7 @@ class TenantController extends Controller
             $this->validateCsrf();
             $before = $tenant;
             $data = $this->getTenantData();
+            $appPwPlain = trim($this->input('app_pw', ''));
 
             $v = new Validator($data);
             $v->required('company_name', '업체명');
@@ -207,6 +210,13 @@ class TenantController extends Controller
                 $this->flash('danger', $v->firstError());
                 $this->redirect('tenant/edit', ['id' => $id]);
                 return;
+            }
+
+            // 비밀번호 입력 시에만 갱신, 비어있으면 기존 값 유지
+            if ($appPwPlain !== '') {
+                $data['app_pw'] = Crypto::encrypt($appPwPlain);
+            } else {
+                unset($data['app_pw']);
             }
 
             $this->tenantModel->update($id, $data);
@@ -539,6 +549,7 @@ class TenantController extends Controller
             'address_detail'  => $this->input('address_detail', '') ?: null,
             'status'          => $this->input('status', 'PENDING'),
             'service_type'    => $this->input('service_type', 'BOTH'),
+            'app_id'          => $this->input('app_id', '') ?: null,
             'contract_start'  => $this->input('contract_start', '') ?: null,
             'contract_end'    => $this->input('contract_end', '') ?: null,
             'memo'            => $this->input('memo', '') ?: null,

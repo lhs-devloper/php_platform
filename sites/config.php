@@ -55,6 +55,9 @@ define('IMG_FOOT_BASE_URL', Env::get('IMG_FOOT_BASE_URL', 'http://footai.ai-sw.k
 define('AI_ENCRYPTION_KEY', Env::get('AI_ENCRYPTION_KEY', ''));
 define('AI_DEFAULT_API_KEY', Env::get('AI_DEFAULT_API_KEY', ''));
 
+// 대칭키 암호화 (CentralAdmin.tenant.app_pw - admin과 동일한 키 필수)
+define('ENCRYPTION_KEY', Env::get('ENCRYPTION_KEY', 'change_this_encryption_key'));
+
 // 환경 설정
 define('APP_ENV', Env::get('APP_ENV', 'local'));
 define('APP_DEBUG', Env::getBool('APP_DEBUG', true));

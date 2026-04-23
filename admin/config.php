@@ -50,6 +50,9 @@ define('HASH_ALGO',     Env::get('HASH_ALGO', 'sha256'));
 // 관리자 사이트 접속 토큰 (가맹점 자동 로그인용)
 define('ADMIN_ACCESS_SECRET', Env::get('ADMIN_ACCESS_SECRET', 'change_this_secret'));
 
+// 대칭키 암호화 (tenant.app_pw 등)
+define('ENCRYPTION_KEY', Env::get('ENCRYPTION_KEY', 'change_this_encryption_key'));
+
 // 프로비저닝 설정
 define('PROVISION_DB_HOST',    Env::get('PROVISION_DB_HOST', DB_HOST));
 define('PROVISION_DB_PORT',    Env::getInt('PROVISION_DB_PORT', DB_PORT));

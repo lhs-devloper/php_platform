@@ -46,6 +46,11 @@
                             </div>
                         </li>
                         <li>
+                            <a class="dropdown-item py-2" href="index.php?route=auth/profile">
+                                <i class="bi bi-person-gear me-2"></i> 내 계정 설정
+                            </a>
+                        </li>
+                        <li>
                             <a class="dropdown-item py-2" href="index.php?route=member/list">
                                 <i class="bi bi-people me-2"></i> 회원 관리
                             </a>

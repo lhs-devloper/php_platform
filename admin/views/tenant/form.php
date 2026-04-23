@@ -104,6 +104,37 @@ $serviceLabels = ['POSTURE' => 'AI자세분석', 'FOOT' => 'AIoT족부분석', '
                 </div>
 
                 <div class="col-12">
+                    <div class="card bg-light border">
+                        <div class="card-body py-3">
+                            <label class="form-label fw-semibold mb-2">
+                                <i class="bi bi-key"></i> 앱 로그인 계정 <?= $isEdit ? '(초기 발급값)' : '' ?>
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small mb-1">앱 아이디</label>
+                                    <input type="text" name="app_id" class="form-control form-control-sm"
+                                           value="<?= htmlspecialchars($t['app_id'] ?? '') ?>"
+                                           placeholder="admin" autocomplete="off">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small mb-1">
+                                        앱 비밀번호
+                                        <?php if ($isEdit): ?><span class="text-muted">(변경 시에만 입력)</span><?php endif; ?>
+                                    </label>
+                                    <input type="text" name="app_pw" class="form-control form-control-sm"
+                                           value="" autocomplete="off"
+                                           placeholder="<?= $isEdit ? '비워두면 기존 값 유지' : '초기 비밀번호' ?>">
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                가맹점 앱의 초기 관리자 계정입니다. 발급 후 가맹점 관리자페이지에서 자유롭게 변경할 수 있으며,
+                                변경 이후에는 이곳의 값은 최신 상태가 아닐 수 있습니다.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
                     <label class="form-label">메모</label>
                     <textarea name="memo" class="form-control" rows="3"><?= htmlspecialchars($t['memo'] ?? '') ?></textarea>
                 </div>

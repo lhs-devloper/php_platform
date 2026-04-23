@@ -13,6 +13,7 @@ require_once BASE_PATH . '/core/Controller.php';
 require_once BASE_PATH . '/core/Model.php';
 require_once BASE_PATH . '/core/Validator.php';
 require_once BASE_PATH . '/core/Pagination.php';
+require_once BASE_PATH . '/core/Crypto.php';
 
 // 뷰 컴포넌트 함수 로드
 require_once BASE_PATH . '/views/components/status_badge.php';
@@ -49,6 +50,9 @@ $router = new Router();
 $router->add('auth/login', 'AuthController', 'login');
 $router->add('auth/logout', 'AuthController', 'logout');
 $router->add('auth/admin_access', 'AuthController', 'adminAccess');
+$router->add('auth/profile', 'AuthController', 'profile');
+$router->add('auth/update_password', 'AuthController', 'updatePassword');
+$router->add('auth/update_app_password', 'AuthController', 'updateAppPassword');
 $router->add('dashboard', 'DashboardController', 'index');
 
 $router->add('member/list', 'MemberController', 'list');

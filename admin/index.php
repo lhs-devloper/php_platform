@@ -88,6 +88,7 @@ require_once BASE_PATH . '/core/Controller.php';
 require_once BASE_PATH . '/core/Model.php';
 require_once BASE_PATH . '/core/Validator.php';
 require_once BASE_PATH . '/core/Pagination.php';
+require_once BASE_PATH . '/core/Crypto.php';
 require_once BASE_PATH . '/core/ProvisionService.php';
 require_once BASE_PATH . '/core/MigrationService.php';
 require_once BASE_PATH . '/core/SchemaUpdateService.php';
